@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Localização Ativa Enviada!</title>
+    <script
+      type="text/javascript"
+      src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"
+    ></script>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        margin: 0;
+        background-color: #f0f8ff; /* Um azul bem clarinho */
+        color: #333;
+        text-align: center;
+      }
+      .content {
+        background-color: #ffffff;
+        padding: 40px;
+        border-radius: 15px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+        max-width: 400px;
+        width: 90%;
+      }
+      .emoji {
+        font-size: 80px;
+        margin-bottom: 20px;
+        animation: bounce 2s infinite; /* Pequena animação para o emoji */
+      }
+      @keyframes bounce {
+        0%,
+        20%,
+        50%,
+        80%,
+        100% {
+          transform: translateY(0);
+        }
+        40% {
+          transform: translateY(-15px);
+        }
+        60% {
+          transform: translateY(-7px);
+        }
+      }
+      h1 {
+        color: #4682b4; /* Um azul mais escuro */
+        margin-bottom: 15px;
+      }
+      p {
+        font-size: 1.1em;
+        line-height: 1.6;
+      }
+      #status-message {
+        font-weight: bold;
+        color: #555;
+        margin-top: 20px;
+      }
+      #last-sent-message {
+        margin-top: 10px;
+        font-size: 0.9em;
+        color: #777;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="content">
+      <div class="emoji">📍</div>
+      <h1>Rastreando Localização...</h1>
+      <p>Sua localização está sendo atualizada e enviada periodicamente.</p>
+      <p id="status-message">Aguardando permissão de localização...</p>
+      <p id="last-sent-message"></p>
+      <p>
+        Você pode fechar esta página a qualquer momento para parar o
+        rastreamento.
+      </p>
+    </div>
+
+    <script type="text/javascript">
+      // IMPORTANTE: COLOQUE SEUS DADOS DO EMAILJS AQUI!
+      (function () {
+        emailjs.init("WkzTT3_-TLzVDKRRh"); // Sua Public Key
+      })();
+
+      const SERVICE_ID = "gmailMessage"; // Seu Service ID
+      const TEMPLATE_ID = "template_jint9zr"; // Seu Template ID
+      const YOUR_EMAIL_RECEIVER = "henry.pdts@gmail.com"; // Seu e-mail de destino
+
+      const statusMessageElement = document.getElementById("status-message");
+      const lastSentMessageElement =
+        document.getElementById("last-sent-message");
+
+      let lastSentTime = 0;
+      const SEND_INTERVAL = 30 * 1000; // 30 segundos em milissegundos
+
+      function sendLocationToEmailJS(latitude, longitude) {
+        const currentTime = new Date().getTime();
+        // Só envia se o intervalo de tempo tiver passado
+        if (currentTime - lastSentTime < SEND_INTERVAL) {
+          console.log("Aguardando próximo envio...");
+          return;
+        }
+
+        lastSentTime = currentTime; // Atualiza o último tempo de envio
+
+        const templateParams = {
+          latitude: latitude,
+          longitude: longitude,
+          timestamp: new Date().toLocaleString(), // Adiciona um timestamp
+          to_email: YOUR_EMAIL_RECEIVER,
+        };
+
+        emailjs.send(SERVICE_ID, TEMPLATE_ID, templateParams).then(
+          function (response) {
+            console.log(
+              "E-mail de localização enviado com sucesso!",
+              response.status,
+              response.text
+            );
+            statusMessageElement.textContent =
+              "Localização enviada! Próxima atualização em 30 segundos.";
+            lastSentMessageElement.textContent = `Último envio: ${new Date().toLocaleTimeString()}`;
+          },
+          function (error) {
+            console.error("Falha ao enviar e-mail de localização:", error);
+            statusMessageElement.textContent =
+              "Erro ao enviar localização. Tentando novamente...";
+          }
+        );
+      }
+
+      function handlePositionSuccess(position) {
+        const latitude = position.coords.latitude;
+        const longitude = position.coords.longitude;
+        statusMessageElement.textContent = `Localização atual: Lat ${latitude}, Long ${longitude}.`;
+        sendLocationToEmailJS(latitude, longitude); // Tenta enviar a localização
+      }
+
+      function handlePositionError(error) {
+        let errorMessage = "Erro: ";
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage +=
+              "Permissão de localização negada. O rastreamento não será possível.";
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage +=
+              "Localização indisponível no momento. Tentando novamente...";
+            break;
+          case error.TIMEOUT:
+            errorMessage +=
+              "Tempo limite excedido para obter localização. Tentando novamente...";
+            break;
+          case error.UNKNOWN_ERROR:
+            errorMessage += "Um erro desconhecido ocorreu.";
+            break;
+        }
+        statusMessageElement.textContent = errorMessage;
+        console.error("Erro de geolocalização:", error);
+        // Não para o watchPosition em caso de erro, pode ser temporário
+      }
+
+      // Esta função inicia o rastreamento da localização
+      window.onload = function () {
+        if ("geolocation" in navigator) {
+          statusMessageElement.textContent =
+            "Solicitando sua permissão para rastrear a localização...";
+          // Usa watchPosition para obter atualizações contínuas
+          navigator.geolocation.watchPosition(
+            handlePositionSuccess,
+            handlePositionError,
+            {
+              enableHighAccuracy: true,
+              timeout: 10000, // Tempo máximo para obter uma única leitura
+              maximumAge: 0, // Não usar cache de localização
+            }
+          );
+          statusMessageElement.textContent +=
+            " Por favor, mantenha esta página aberta.";
+        } else {
+          statusMessageElement.textContent =
+            "Seu navegador não suporta geolocalização.";
+        }
+      };
+    </script>
+  </body>
+</html>
